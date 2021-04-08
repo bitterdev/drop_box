@@ -10,22 +10,23 @@ let uppy = null;
         let $dropBox = this;
         let $dropBoxModal = $(options.modalSelector);
         let xhrRequests = [];
-
+        
         uppy = new Uppy({autoProceed: false})
             .use(DragDrop, {
-                target: "#" + $dropBox.attr("id"),
-                note: 'test'
+                target: "#" + $dropBox.attr("id")
             })
             .use(Dashboard, {
                 trigger: "#" + $dropBox.attr("id"),
-                closeAfterFinish: true
+                closeAfterFinish: true,
+                proudlyDisplayPoweredByUppy: false
             })
             .use(Tus, {
                 endpoint: CCM_DISPATCHER_FILENAME + '/ccm/drop_box/upload',
                 resume: true,
                 chunkSize: 1000000, /* 1mb */
                 autoRetry: true,
-                retryDelays: [0, 1000, 3000, 5000]
+                limit: 10,
+                retryDelays: [1000, 3000, 5000, 8000]
             })
 
         uppy.on('file-added', (file) => {
@@ -37,15 +38,16 @@ let uppy = null;
                 xhrRequests.push($.getJSON({
                     url: CCM_DISPATCHER_FILENAME + '/ccm/drop_box/resolve_download_url/' + response.uploadURL.split("/").pop()
                 }, (json) => {
-                    $dropBoxModal.find(".drop-box-file-list").append(
-                        $("<li></li>")
-                            .html(
-                                $("<a></a>")
-                                    .attr("href", json.downloadUrl)
-                                    .attr("target", "_blank")
-                                    .html(json.fileName)
-                            )
-                    );
+                    var header = $("<h5 />")
+                    var input = $("<input />")
+                    var resultList = $("<li></li>")
+                    resultList.attr('class', 'mb-4')
+                    header.text(json.fileName)
+                    input
+                        .attr('class', 'form-control')
+                        .attr('value', json.downloadUrl)
+                    resultList.append(header).append(input)
+                    $dropBoxModal.find(".drop-box-file-list").append(resultList)
                 }));
             }
         })
